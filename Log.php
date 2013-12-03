@@ -85,9 +85,6 @@ class XMPPHP_Log {
 	public function log($msg, $runlevel = self::LEVEL_INFO) {
 		$time = time();
 		#$this->data[] = array($this->runlevel, $msg, $time);
-        if ($runlevel <= self::LEVEL_DEBUG) {
-        echo $msg."\n";
-        }
 		if($this->printout and $runlevel <= $this->runlevel) {
 			$this->writeLine($msg, $runlevel, $time);
 		}
