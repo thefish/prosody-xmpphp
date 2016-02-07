@@ -378,6 +378,13 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
             $vars['qop']    = 'auth'; // Force qop to auth
             if (!isset($vars['digest-uri'])) $vars['digest-uri'] = 'xmpp/' . $this->server;
 
+            // now, magic realm !
+            list($u,$r) = preg_split('/@/', $this->user);
+            if ( $r != null && !isSet($vars['realm']) ) {
+                $this->user = $u;
+                $vars['realm'] = $r;
+            }
+
             // now, the magic...
             $a1 = sprintf('%s:%s:%s', $this->user, $vars['realm'], $this->password);
             if ($vars['algorithm'] == 'md5-sess') {

@@ -118,7 +118,8 @@ class Roster {
 	 * @param string $status
 	*/
 	public function setPresence($presence, $priority, $show, $status) {
-		list($jid, $resource) = split("/", $presence);
+        // PHP 5.3+ Fix
+		list($jid, $resource) = preg_split("/\//", $presence);
 		if ($show != 'unavailable') {
 			if (!$this->isContact($jid)) {
 				$this->addContact($jid, 'not-in-roster');
@@ -137,7 +138,8 @@ class Roster {
 	 * @param string $jid
 	 */
 	public function getPresence($jid) {
-		$split = split("/", $jid);
+        // PHP 5.3+ Fix
+		$split = preg_split("/\//", $jid);
 		$jid = $split[0];
 		if($this->isContact($jid)) {
 			$current = array('resource' => '', 'active' => '', 'priority' => -129, 'show' => '', 'status' => ''); //Priorities can only be -128 = 127

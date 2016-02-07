@@ -263,7 +263,8 @@ class XMPPHP_XMLStream {
 			$ns_tags = array($xpath);
 		}
 		foreach($ns_tags as $ns_tag) {
-			list($l, $r) = split("}", $ns_tag);
+            // PHP 5.3+ Fix
+			list($l, $r) = preg_split("/}/", $ns_tag);
 			if ($r != null) {
 				$xpart = array(substr($l, 1), $r);
 			} else {
