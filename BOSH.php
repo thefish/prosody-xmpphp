@@ -44,12 +44,12 @@ class XMPPHP_BOSH extends XMPPHP_XMPP {
 
 		protected $rid;
 		protected $sid;
-		protected $http_server;
-		protected $http_buffer = Array();
+		protected $httpServer;
+		protected $httpBuffer = Array();
 		protected $session = false;
 
 		public function connect($server, $wait='1', $session=false) {
-			$this->http_server = $server;
+			$this->httpServer = $server;
 			$this->use_encryption = false;
 			$this->session = $session;
 
@@ -85,21 +85,21 @@ class XMPPHP_BOSH extends XMPPHP_XMPP {
 			if(!$body) {
 				$body = $this->__buildBody();
 			}
-			$ch = curl_init($this->http_server);
-			curl_setopt($ch, CURLOPT_HEADER, 0);
-			curl_setopt($ch, CURLOPT_POST, 1);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $body->asXML());
-			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+			$curlRessource = curl_init($this->httpServer);
+			curl_setopt($curlRessource, CURLOPT_HEADER, 0);
+			curl_setopt($curlRessource, CURLOPT_POST, 1);
+			curl_setopt($curlRessource, CURLOPT_POSTFIELDS, $body->asXML());
+			curl_setopt($curlRessource, CURLOPT_FOLLOWLOCATION, true);
 			$header = array('Accept-Encoding: gzip, deflate','Content-Type: text/xml; charset=utf-8');
-			curl_setopt($ch, CURLOPT_HTTPHEADER, $header );
-			curl_setopt($ch, CURLOPT_VERBOSE, 0);
+			curl_setopt($curlRessource, CURLOPT_HTTPHEADER, $header );
+			curl_setopt($curlRessource, CURLOPT_VERBOSE, 0);
 			$output = '';
 			if($recv) {
-				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-				$output = curl_exec($ch);
-				$this->http_buffer[] = $output;
+				curl_setopt($curlRessource, CURLOPT_RETURNTRANSFER, 1);
+				$output = curl_exec($curlRessource);
+				$this->httpBuffer[] = $output;
 			}
-			curl_close($ch);
+			curl_close($curlRessource);
 			return $output;
 		}
 
@@ -112,17 +112,17 @@ class XMPPHP_BOSH extends XMPPHP_XMPP {
 			#if($this->sid) $xml->addAttribute('xmlns', 'http://jabber.org/protocol/httpbind');
 			$xml->addAttribute('xml:lang', 'en');
 			if($sub) { // ok, so simplexml is lame
-				$p = dom_import_simplexml($xml);
-				$c = dom_import_simplexml($sub);
-				$cn = $p->ownerDocument->importNode($c, true);
-				$p->appendChild($cn);
-				$xml = simplexml_import_dom($p);
+				$domXML = dom_import_simplexml($xml);
+				$domXMLSub = dom_import_simplexml($sub);
+				$domXMLChild = $domXML->ownerDocument->importNode($domXMLSub, true);
+				$domXML->appendChild($domXMLChild);
+				$xml = simplexml_import_dom($domXML);
 			}
 			return $xml;
 		}
 
 		public function __process() {
-			if($this->http_buffer) {
+			if($this->httpBuffer) {
 				$this->__parseBuffer();
 			} else {
 				$this->__sendBody();
@@ -131,10 +131,10 @@ class XMPPHP_BOSH extends XMPPHP_XMPP {
 		}
 
 		public function __parseBuffer() {
-			while ($this->http_buffer) {
-				$idx = key($this->http_buffer);
-				$buffer = $this->http_buffer[$idx];
-				unset($this->http_buffer[$idx]);
+			while ($this->httpBuffer) {
+				$idx = key($this->httpBuffer);
+				$buffer = $this->httpBuffer[$idx];
+				unset($this->httpBuffer[$idx]);
 				if($buffer) {
 					$xml = new SimpleXMLElement($buffer);
 					$children = $xml->xpath('child::node()');
@@ -165,7 +165,7 @@ class XMPPHP_BOSH extends XMPPHP_XMPP {
 			$body->addAttribute('to', $this->host);
 			$body->addAttribute('xmpp:restart', 'true', 'urn:xmpp:xbosh');
 			$buff = "<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>";
-			$response = $this->__sendBody($body);
+			#$response = $this->__sendBody($body);
 			$this->been_reset = true;
 			xml_parse($this->parser, $buff, false);
 		}

@@ -40,7 +40,7 @@ require_once "XMPP.php";
 		 *
 		 * @var string
 		 */
-		protected $session_id;
+		protected $sessionID;
 
 		public function __construct($host, $port, $user, $password, $resource, $server = null, $printlog = false, $loglevel = null) {
 			parent::__construct($host, $port, $user, $password, $resource, $server, $printlog, $loglevel);
@@ -58,7 +58,7 @@ require_once "XMPP.php";
 		 */
 		public function startXML($parser, $name, $attr) {
 			if($this->xml_depth == 0) {
-				$this->session_id = $attr['ID'];
+				$this->sessionID = $attr['ID'];
 				$this->authenticate();
 			}
 			parent::startXML($parser, $name, $attr);
@@ -69,9 +69,9 @@ require_once "XMPP.php";
 		 *
 		 */
 		public function authenticate() {
-			$id = $this->getId();
-			$this->addidhandler($id, 'authfieldshandler');
-			$this->send("<iq type='get' id='$id'><query xmlns='jabber:iq:auth'><username>{$this->user}</username></query></iq>");
+			$authID = $this->getId();
+			$this->addidhandler($authID, 'authfieldshandler');
+			$this->send("<iq type='get' id='$authID'><query xmlns='jabber:iq:auth'><username>{$this->user}</username></query></iq>");
 		}
 
 		/**
@@ -80,14 +80,14 @@ require_once "XMPP.php";
 		 * @param XMLObj $xml
 		 */
 		public function authFieldsHandler($xml) {
-			$id = $this->getId();
-			$this->addidhandler($id, 'oldAuthResultHandler');
+			$idHandler = $this->getId();
+			$this->addidhandler($idHandler, 'oldAuthResultHandler');
 			if($xml->sub('query')->hasSub('digest')) {
-				$hash = sha1($this->session_id . $this->password);
-				print "{$this->session_id} {$this->password}\n";
-				$out = "<iq type='set' id='$id'><query xmlns='jabber:iq:auth'><username>{$this->user}</username><digest>{$hash}</digest><resource>{$this->resource}</resource></query></iq>";
+				$hash = sha1($this->sessionID . $this->password);
+				print "{$this->sessionID} {$this->password}\n";
+				$out = "<iq type='set' id='$idHandler'><query xmlns='jabber:iq:auth'><username>{$this->user}</username><digest>{$hash}</digest><resource>{$this->resource}</resource></query></iq>";
 			} else {
-				$out = "<iq type='set' id='$id'><query xmlns='jabber:iq:auth'><username>{$this->user}</username><password>{$this->password}</password><resource>{$this->resource}</resource></query></iq>";
+				$out = "<iq type='set' id='$idHandler'><query xmlns='jabber:iq:auth'><username>{$this->user}</username><password>{$this->password}</password><resource>{$this->resource}</resource></query></iq>";
 			}
 			$this->send($out);
 

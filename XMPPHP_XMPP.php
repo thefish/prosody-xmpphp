@@ -76,22 +76,22 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 * @var boolean
 	 */
 	protected $authed = false;
-	protected $session_started = false;
+	protected $sessionStarted = false;
 
 	/**
 	 * @var boolean
 	 */
-	protected $auto_subscribe = false;
+	protected $autoSubscribe = false;
 
 	/**
 	 * @var boolean
 	 */
-	protected $use_encryption = true;
+	protected $useEncryption = true;
 
 	/**
 	 * @var boolean
 	 */
-	public $track_presence = true;
+	public $trackPresence = true;
 
 	/**
 	 * @var object
@@ -101,17 +101,17 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
     /**
      * @var array supported auth mechanisms
      */
-    protected $auth_mechanism_supported = array('PLAIN', 'DIGEST-MD5');
+    protected $authMechanismSupported = array('PLAIN', 'DIGEST-MD5');
 
     /**
      * @var string default auth mechanism
      */
-    protected $auth_mechanism_default = 'PLAIN';
+    protected $authMechanismDefault = 'PLAIN';
 
     /**
      * @var string prefered auth mechanism
      */
-    protected $auth_mechanism_preferred = 'DIGEST-MD5';
+    protected $authMechanismPreferred = 'DIGEST-MD5';
 
 	/**
 	 * Constructor
@@ -136,21 +136,21 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 		$this->basejid = $this->user . '@' . $this->host;
 
 		$this->roster = new Roster();
-		$this->track_presence = true;
+		$this->trackPresence = true;
 
-		$this->stream_start = '<stream:stream to="' . $server . '" xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client" version="1.0">';
-		$this->stream_end   = '</stream:stream>';
+		$this->streamStart = '<stream:stream to="' . $server . '" xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client" version="1.0">';
+		$this->streamEnd   = '</stream:stream>';
 		$this->default_ns   = 'jabber:client';
 
-		$this->addXPathHandler('{http://etherx.jabber.org/streams}features', 'features_handler');
-		$this->addXPathHandler('{urn:ietf:params:xml:ns:xmpp-sasl}success', 'sasl_success_handler');
-		$this->addXPathHandler('{urn:ietf:params:xml:ns:xmpp-sasl}failure', 'sasl_failure_handler');
-		$this->addXPathHandler('{urn:ietf:params:xml:ns:xmpp-tls}proceed', 'tls_proceed_handler');
-		$this->addXPathHandler('{jabber:client}message', 'message_handler');
-		$this->addXPathHandler('{jabber:client}presence', 'presence_handler');
-		$this->addXPathHandler('iq/{jabber:iq:roster}query', 'roster_iq_handler');
+		$this->addXPathHandler('{http://etherx.jabber.org/streams}features', 'featuresHandler');
+		$this->addXPathHandler('{urn:ietf:params:xml:ns:xmpp-sasl}success', 'saslSuccessHandler');
+		$this->addXPathHandler('{urn:ietf:params:xml:ns:xmpp-sasl}failure', 'saslFailureHandler');
+		$this->addXPathHandler('{urn:ietf:params:xml:ns:xmpp-tls}proceed', 'tlsProceedHandler');
+		$this->addXPathHandler('{jabber:client}message', 'messageHandler');
+		$this->addXPathHandler('{jabber:client}presence', 'presenceHandler');
+		$this->addXPathHandler('iq/{jabber:iq:roster}query', 'rosterIqHandler');
         // For DIGEST-MD5 auth :
-        $this->addXPathHandler('{urn:ietf:params:xml:ns:xmpp-sasl}challenge', 'sasl_challenge_handler');
+        $this->addXPathHandler('{urn:ietf:params:xml:ns:xmpp-sasl}challenge', 'saslChallengeHandler');
 	}
 
 	/**
@@ -159,7 +159,7 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 * @param boolean $useEncryption
 	 */
 	public function useEncryption($useEncryption = true) {
-		$this->use_encryption = $useEncryption;
+		$this->useEncryption = $useEncryption;
 	}
 
 	/**
@@ -168,7 +168,7 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 * @param boolean $autoSubscribe
 	 */
 	public function autoSubscribe($autoSubscribe = true) {
-		$this->auto_subscribe = $autoSubscribe;
+		$this->autoSubscribe = $autoSubscribe;
 	}
 
 	/**
@@ -241,7 +241,7 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 *
 	 * @param string $xml
 	 */
-	public function message_handler($xml) {
+	public function messageHandler($xml) {
 		if(isset($xml->attrs['type'])) {
 			$payload['type'] = $xml->attrs['type'];
 		} else {
@@ -259,19 +259,19 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 *
 	 * @param string $xml
 	 */
-	public function presence_handler($xml) {
+	public function presenceHandler($xml) {
 		$payload['type'] = (isset($xml->attrs['type'])) ? $xml->attrs['type'] : 'available';
 		$payload['show'] = (isset($xml->sub('show')->data)) ? $xml->sub('show')->data : $payload['type'];
 		$payload['from'] = $xml->attrs['from'];
 		$payload['status'] = (isset($xml->sub('status')->data)) ? $xml->sub('status')->data : '';
 		$payload['priority'] = (isset($xml->sub('priority')->data)) ? intval($xml->sub('priority')->data) : 0;
 		$payload['xml'] = $xml;
-		if($this->track_presence) {
+		if($this->trackPresence) {
 			$this->roster->setPresence($payload['from'], $payload['priority'], $payload['show'], $payload['status']);
 		}
 		$this->log->log("Presence: {$payload['from']} [{$payload['show']}] {$payload['status']}",  XMPPHP_Log::LEVEL_DEBUG);
 		if(array_key_exists('type', $xml->attrs) and $xml->attrs['type'] == 'subscribe') {
-			if($this->auto_subscribe) {
+			if($this->autoSubscribe) {
 				$this->send("<presence type='subscribed' to='{$xml->attrs['from']}' from='{$this->fulljid}' />");
 				$this->send("<presence type='subscribe' to='{$xml->attrs['from']}' from='{$this->fulljid}' />");
 			}
@@ -288,12 +288,12 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 *
 	 * @param string $xml
 	 */
-	protected function features_handler($xml) {
-		if($xml->hasSub('starttls') and $this->use_encryption) {
+	protected function featuresHandler($xml) {
+		if($xml->hasSub('starttls') and $this->useEncryption) {
 			$this->send("<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'><required /></starttls>");
 		} elseif($xml->hasSub('bind') and $this->authed) {
 			$id = $this->getId();
-			$this->addIdHandler($id, 'resource_bind_handler');
+			$this->addIdHandler($id, 'resourceBindHandler');
 			$this->send("<iq xmlns=\"jabber:client\" type=\"set\" id=\"$id\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\"><resource>{$this->resource}</resource></bind></iq>");
 		} else {
 			$this->log->log("Attempting Auth...");
@@ -304,13 +304,13 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
                     $available = array();
                     foreach ($xml->sub('mechanisms')->subs as $sub) {
                         if ($sub->name == 'mechanism') {
-                            if (in_array($sub->data, $this->auth_mechanism_supported)) {
+                            if (in_array($sub->data, $this->authMechanismSupported)) {
                                 $available[$sub->data] = $sub->data;
                             }
                         }
                     }
-                    if (isset($available[$this->auth_mechanism_preferred])) {
-                        $mechanism = $this->auth_mechanism_preferred;
+                    if (isset($available[$this->authMechanismPreferred])) {
+                        $mechanism = $this->authMechanismPreferred;
                     } else {
                         // use the first available
                         $mechanism = reset($available);
@@ -336,7 +336,8 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 *
 	 * @param string $xml
 	 */
-	protected function sasl_success_handler($xml) {
+	protected function saslSuccessHandler($xml) {
+        $xml = null; // cause not used so far
 		$this->log->log("Auth success!");
 		$this->authed = true;
 		$this->reset();
@@ -347,7 +348,8 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 *
 	 * @param string $xml
 	 */
-	protected function sasl_failure_handler($xml) {
+	protected function saslFailureHandler($xml) {
+        $xml = null; // cause not used so far
 		$this->log->log("Auth failed!",  XMPPHP_Log::LEVEL_ERROR);
 		$this->disconnect();
 
@@ -359,14 +361,14 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
      *
      * @param string $xml
      */
-    protected function sasl_challenge_handler($xml) {
+    protected function saslChallengeHandler($xml) {
         // Decode and parse the challenge string
         // (may be something like foo="bar",foo2="bar2,bar3,bar4",foo3=bar5 )
         $challenge = base64_decode($xml->data);
         $vars = array();
         $matches = array();
         preg_match_all('/(\w+)=(?:"([^"]*)|([^,]*))/', $challenge, $matches);
-        $res = array();
+        $response = array();
         foreach ($matches[1] as $k => $v) {
           $vars[$v] = (empty($matches[2][$k])?$matches[3][$k]:$matches[2][$k]);
         }
@@ -379,19 +381,19 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
             if (!isset($vars['digest-uri'])) $vars['digest-uri'] = 'xmpp/' . $this->server;
 
             // now, magic realm !
-            list($u,$r) = preg_split('/@/', $this->user);
-            if ( $r != null && !isSet($vars['realm']) ) {
-                $this->user = $u;
-                $vars['realm'] = $r;
+            list($tmpUser,$tmpRealm) = preg_split('/@/', $this->user);
+            if ( $tmpRealm != null && !isSet($vars['realm']) ) {
+                $this->user = $tmpUser;
+                $vars['realm'] = $tmpRealm;
             }
 
             // now, the magic...
-            $a1 = sprintf('%s:%s:%s', $this->user, $vars['realm'], $this->password);
+            $authString1 = sprintf('%s:%s:%s', $this->user, $vars['realm'], $this->password);
             if ($vars['algorithm'] == 'md5-sess') {
-                $a1 = pack('H32',md5($a1)) . ':' . $vars['nonce'] . ':' . $vars['cnonce'];
+                $authString1 = pack('H32',md5($authString1)) . ':' . $vars['nonce'] . ':' . $vars['cnonce'];
             }
-            $a2 = "AUTHENTICATE:" . $vars['digest-uri'];
-            $password = md5($a1) . ':' . $vars['nonce'] . ':' . $vars['nc'] . ':' . $vars['cnonce'] . ':' . $vars['qop'] . ':' .md5($a2);
+            $authString2 = "AUTHENTICATE:" . $vars['digest-uri'];
+            $password = md5($authString1) . ':' . $vars['nonce'] . ':' . $vars['nc'] . ':' . $vars['cnonce'] . ':' . $vars['qop'] . ':' .md5($authString2);
             $password = md5($password);
             $response = sprintf('username="%s",realm="%s",nonce="%s",cnonce="%s",nc=%s,qop=%s,digest-uri="%s",response=%s,charset=utf-8',
                 $this->user, $vars['realm'], $vars['nonce'], $vars['cnonce'], $vars['nc'], $vars['qop'], $vars['digest-uri'], $password);
@@ -415,16 +417,16 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 *
 	 * @param string $xml
 	 */
-	protected function resource_bind_handler($xml) {
+	protected function resourceBindHandler($xml) {
 		if($xml->attrs['type'] == 'result') {
 			$this->log->log("Bound to " . $xml->sub('bind')->sub('jid')->data);
 			$this->fulljid = $xml->sub('bind')->sub('jid')->data;
 			$jidarray = explode('/',$this->fulljid);
 			$this->jid = $jidarray[0];
 		}
-		$id = $this->getId();
-		$this->addIdHandler($id, 'session_start_handler');
-		$this->send("<iq xmlns='jabber:client' type='set' id='$id'><session xmlns='urn:ietf:params:xml:ns:xmpp-session' /></iq>");
+		$handlerId = $this->getId();
+		$this->addIdHandler($handlerId, 'sessionStartHandler');
+		$this->send("<iq xmlns='jabber:client' type='set' id='$handlerId'><session xmlns='urn:ietf:params:xml:ns:xmpp-session' /></iq>");
 	}
 
 	/**
@@ -432,8 +434,8 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	*
 	*/
 	public function getRoster() {
-		$id = $this->getID();
-		$this->send("<iq xmlns='jabber:client' type='get' id='$id'><query xmlns='jabber:iq:roster' /></iq>");
+		$rosterId = $this->getID();
+		$this->send("<iq xmlns='jabber:client' type='get' id='$rosterId'><query xmlns='jabber:iq:roster' /></iq>");
 	}
 
 	/**
@@ -442,7 +444,7 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	*
 	* @param string $xml
 	*/
-	protected function roster_iq_handler($xml) {
+	protected function rosterIqHandler($xml) {
 		$status = "result";
 		$xmlroster = $xml->sub('query');
 		foreach($xmlroster->subs as $item) {
@@ -476,9 +478,10 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 *
 	 * @param string $xml
 	 */
-	protected function session_start_handler($xml) {
+	protected function sessionStartHandler($xml) {
+        $xml = null; // cause not used so far
 		$this->log->log("Session started");
-		$this->session_started = true;
+		$this->sessionStarted = true;
 		$this->event('session_start');
 	}
 
@@ -487,7 +490,8 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 *
 	 * @param string $xml
 	 */
-	protected function tls_proceed_handler($xml) {
+	protected function tlsProceedHandler($xml) {
+        $xml = null; // cause not used so far
 		$this->log->log("Starting TLS encryption");
 		stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_SSLv23_CLIENT);
 		$this->reset();
@@ -498,12 +502,12 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	*
 	*/
 	public function getVCard($jid = Null) {
-		$id = $this->getID();
-		$this->addIdHandler($id, 'vcard_get_handler');
+		$cardId = $this->getID();
+		$this->addIdHandler($cardId, 'vcardGetHandler');
 		if($jid) {
-			$this->send("<iq type='get' id='$id' to='$jid'><vCard xmlns='vcard-temp' /></iq>");
+			$this->send("<iq type='get' id='$cardId' to='$jid'><vCard xmlns='vcard-temp' /></iq>");
 		} else {
-			$this->send("<iq type='get' id='$id'><vCard xmlns='vcard-temp' /></iq>");
+			$this->send("<iq type='get' id='$cardId'><vCard xmlns='vcard-temp' /></iq>");
 		}
 	}
 
@@ -512,21 +516,21 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	*
 	* @param XML Object $xml
 	*/
-	protected function vcard_get_handler($xml) {
-		$vcard_array = array();
+	protected function vcardGetHandler($xml) {
+		$vcardArray = array();
 		$vcard = $xml->sub('vcard');
 		// go through all of the sub elements and add them to the vcard array
 		foreach ($vcard->subs as $sub) {
 			if ($sub->subs) {
-				$vcard_array[$sub->name] = array();
-				foreach ($sub->subs as $sub_child) {
-					$vcard_array[$sub->name][$sub_child->name] = $sub_child->data;
+				$vcardArray[$sub->name] = array();
+				foreach ($sub->subs as $subChild) {
+					$vcardArray[$sub->name][$subChild->name] = $subChild->data;
 				}
 			} else {
-				$vcard_array[$sub->name] = $sub->data;
+				$vcardArray[$sub->name] = $sub->data;
 			}
 		}
-		$vcard_array['from'] = $xml->attrs['from'];
-		$this->event('vcard', $vcard_array);
+		$vcardArray['from'] = $xml->attrs['from'];
+		$this->event('vcard', $vcardArray);
 	}
 }

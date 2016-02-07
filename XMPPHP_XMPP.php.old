@@ -76,7 +76,7 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 * @var boolean
 	 */
 	protected $authed = false;
-	protected $session_started = false;
+	protected $sessionStarted = false;
 	
 	/**
 	 * @var boolean
@@ -378,7 +378,7 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
 	 */
 	protected function session_start_handler($xml) {
 		$this->log->log("Session started");
-		$this->session_started = true;
+		$this->sessionStarted = true;
 		$this->event('session_start');
 	}
 

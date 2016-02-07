@@ -50,7 +50,7 @@ class XMPPHP_XMLObj {
 	 *
 	 * @var string
 	 */
-	public $ns;
+	public $nameSpace;
 	
 	/**
 	 * Attributes
@@ -77,13 +77,13 @@ class XMPPHP_XMLObj {
 	 * Constructor
 	 *
 	 * @param string $name
-	 * @param string $ns
+	 * @param string $nameSpace
 	 * @param array  $attrs
 	 * @param string $data
 	 */
-	public function __construct($name, $ns = '', $attrs = array(), $data = '') {
+	public function __construct($name, $nameSpace = '', $attrs = array(), $data = '') {
 		$this->name = strtolower($name);
-		$this->ns   = $ns;
+		$this->nameSpace   = $nameSpace;
 		if(is_array($attrs) && count($attrs)) {
 			foreach($attrs as $key => $value) {
 				$this->attrs[strtolower($key)] = $value;
@@ -98,7 +98,7 @@ class XMPPHP_XMLObj {
 	 * @param integer $depth
 	 */
 	public function printObj($depth = 0) {
-		print str_repeat("\t", $depth) . $this->name . " " . $this->ns . ' ' . $this->data;
+		print str_repeat("\t", $depth) . $this->name . " " . $this->nameSpace . ' ' . $this->data;
 		print "\n";
 		foreach($this->subs as $sub) {
 			$sub->printObj($depth + 1);
@@ -111,7 +111,7 @@ class XMPPHP_XMLObj {
 	 * @param string $str
 	 */
 	public function toString($str = '') {
-		$str .= "<{$this->name} xmlns='{$this->ns}' ";
+		$str .= "<{$this->name} xmlns='{$this->nameSpace}' ";
 		foreach($this->attrs as $key => $value) {
 			if($key != 'xmlns') {
 				$value = htmlspecialchars($value);
@@ -133,9 +133,9 @@ class XMPPHP_XMLObj {
 	 * @param string $name
 	 * @return boolean
 	 */
-	public function hasSub($name, $ns = null) {
+	public function hasSub($name, $nameSpace = null) {
 		foreach($this->subs as $sub) {
-			if(($name == "*" or $sub->name == $name) and ($ns == null or $sub->ns == $ns)) return true;
+			if(($name == "*" or $sub->name == $name) and ($nameSpace == null or $sub->nameSpace == $nameSpace)) return true;
 		}
 		return false;
 	}
@@ -145,12 +145,13 @@ class XMPPHP_XMLObj {
 	 *
 	 * @param string $name
 	 * @param string $attrs
-	 * @param string $ns
+	 * @param string $nameSpace
 	 */
-	public function sub($name, $attrs = null, $ns = null) {
+	public function sub($name, $attrs = null, $nameSpace = null) {
+        $attrs = null; // cause not used so far
 		#TODO attrs is ignored
 		foreach($this->subs as $sub) {
-			if($sub->name == $name and ($ns == null or $sub->ns == $ns)) {
+			if($sub->name == $name and ($nameSpace == null or $sub->nameSpace == $nameSpace)) {
 				return $sub;
 			}
 		}
